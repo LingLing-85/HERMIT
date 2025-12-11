@@ -32,43 +32,73 @@ def to_one_directed_edge(undirected_edge):
     return torch.from_numpy(sparse_to_tuple(sp.triu(to_scipy_sparse_matrix(undirected_edge)))[0]).transpose(1, 0)
 
 
-def get_edges(edge_index_list):
-    undirected_edge_list = []
+def get_edges(edge_index_list, edge_weight_list=None):
+    directed_edge_list = []
+    directed_weight_list = []
+    
     for i in range(0, len(edge_index_list)):
-        edge_index, _ = remove_self_loops(
-            torch.from_numpy(np.array(edge_index_list[i])).transpose(1, 0))  # remove self-loop
-        undirected_edge_list.append(to_undirected(edge_index))  # convert to undirected/bi-directed edge_index
-    return undirected_edge_list
+        data = torch.from_numpy(np.array(edge_index_list[i]))
+        # Free memory of the source element immediately
+        edge_index_list[i] = None
+        
+        # Ensure shape is [2, N]
+        if data.shape[0] != 2 and data.shape[1] == 2:
+            data = data.transpose(1, 0)
+            
+        if edge_weight_list is not None:
+            weights = edge_weight_list[i]
+            # Free memory of the source weight immediately
+            edge_weight_list[i] = None
+            
+            # Remove self-loops from both edges and weights
+            edge_index, weights = remove_self_loops(data, weights)
+            directed_weight_list.append(weights)
+        else:
+            edge_index, _ = remove_self_loops(data)  # remove self-loop
+            
+        # Keep edges directed to preserve routing directionality
+        directed_edge_list.append(edge_index)
+        
+    if edge_weight_list is not None:
+        return directed_edge_list, directed_weight_list
+    return directed_edge_list
 
 
-def get_prediction_edges(undirected_edge_index_list):
+def get_prediction_edges(directed_edge_index_list, num_nodes):
     pos_edges_list = []
     neg_edges_list = []
-    for undirected_edge in undirected_edge_index_list:
-        pos_edges = to_one_directed_edge(undirected_edge)
+    for directed_edge in directed_edge_index_list:
+        # Edges are already directed, no need to convert
+        pos_edges = directed_edge
 
         pos_edges_list.append(pos_edges)
-        neg_edges = negative_sampling(undirected_edge, num_neg_samples=pos_edges.size(1))
+        neg_edges = negative_sampling(directed_edge, num_nodes=num_nodes, num_neg_samples=pos_edges.size(1))
         neg_edges_list.append(neg_edges)
     return pos_edges_list, neg_edges_list
 
 
-def get_new_prediction_edges(undirected_edge_index_list, num_nodes):
+def get_new_prediction_edges(directed_edge_index_list, num_nodes):
     pos_edges_list = [torch.zeros((2, 100))]  # ignore the first pos edges
     neg_edges_list = [torch.zeros((2, 100))]  # ignore the first neg edges
 
-    for i in range(1, len(undirected_edge_index_list)):
-        current_edges = to_one_directed_edge(undirected_edge_index_list[i])
-        last_edges = to_one_directed_edge(undirected_edge_index_list[i - 1])
-
+    for i in range(1, len(directed_edge_index_list)):
+        # Edges are already directed, no need to convert
+        current_edges = directed_edge_index_list[i].long()
+        last_edges = directed_edge_index_list[i - 1].long()
+        
+        # Check for index out of bounds
+        if current_edges.max() >= num_nodes:
+            print(f"❌ ERROR: current_edges max {current_edges.max()} >= num_nodes {num_nodes}")
+            
         edges_perm = current_edges[0] * num_nodes + current_edges[1]  # hash current edges
         last_edges_perm = last_edges[0] * num_nodes + last_edges[1]  # hash last edges
 
         perm = np.setdiff1d(edges_perm, np.intersect1d(edges_perm, last_edges_perm))  # new edges: edge-edge^last_edge
-        edges_pos = np.vstack(np.divmod(perm, num_nodes)).transpose().astype(np.long)  # convert perm to indices
+        edges_pos = np.vstack(np.divmod(perm, num_nodes)).transpose().astype(np.int64)  # convert perm to indices
         edges_pos = torch.from_numpy(edges_pos).transpose(1, 0)
 
         pos_edges_list.append(edges_pos)
-        neg_edges_list.append(negative_sampling(to_undirected(edges_pos), num_neg_samples=edges_pos.size(1)))
+        # Use directed edges for negative sampling
+        neg_edges_list.append(negative_sampling(edges_pos, num_nodes=num_nodes, num_neg_samples=edges_pos.size(1)))
 
     return pos_edges_list, neg_edges_list

@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints
+data/input/cached/
+data/input/processed/
+data/output/
+logs/
+nohup.out
+.DS_Store
+script/data/

@@ -58,40 +58,19 @@ def load_new_dataset(dataset):
     data = {}
     rawfile = '../data/input/processed/{}/{}.pt'.format(dataset, dataset)
     edge_index_list = torch.load(rawfile)  # format: list:[[[1,2],[2,3],[3,4]]]
-    
-    # Load edge weights if available
-    weight_file = '../data/input/processed/{}/{}_weights.pt'.format(dataset, dataset)
-    if os.path.exists(weight_file):
-        edge_weight_list = torch.load(weight_file)
-        print('>> loaded edge features from {}'.format(weight_file))
-    else:
-        edge_weight_list = None
-        print('>> no edge features found, using uniform features')
-    
-    if edge_weight_list is not None:
-        directed_edges, directed_weights = get_edges(edge_index_list, edge_weight_list)
-        data['weights'] = directed_weights
-        del edge_weight_list  # Free memory
-    else:
-        directed_edges = get_edges(edge_index_list)
-        data['weights'] = None
-    
-    time_length = len(edge_index_list)
-    del edge_index_list  # Free memory
-    import gc
-    gc.collect()  # Force garbage collection
-        
-    num_nodes = int(np.max(np.hstack(directed_edges))) + 1
-    pedges, nedges = get_prediction_edges(directed_edges, num_nodes)  # list
-    new_pedges, new_nedges = get_new_prediction_edges(directed_edges, num_nodes)
+    undirected_edges = get_edges(edge_index_list)
+    num_nodes = int(np.max(np.hstack(undirected_edges))) + 1
+    pedges, nedges = get_prediction_edges(undirected_edges, num_nodes)  # list
+    new_pedges, new_nedges = get_new_prediction_edges(undirected_edges, num_nodes)
 
-    data['edge_index_list'] = directed_edges
+    data['edge_index_list'] = undirected_edges
     data['pedges'], data['nedges'] = pedges, nedges
     data['new_pedges'], data['new_nedges'] = new_pedges, new_nedges  # list
     data['num_nodes'] = num_nodes
-    data['time_length'] = time_length
+    data['time_length'] = len(edge_index_list)
+    data['weights'] = None
     print('>> data: {}'.format(dataset))
-    print('>> total length: {}'.format(time_length))
+    print('>> total length: {}'.format(len(edge_index_list)))
     print('>> number nodes: {}'.format(data['num_nodes']))
     return data
 
@@ -134,11 +113,11 @@ def load_new_dataset_det(dataset):
     data = {}
     rawfile = '../data/input/processed/{}/{}.pt'.format(dataset, dataset)
     edge_index_list = torch.load(rawfile)  # format: list:[[[1,2],[2,3],[3,4]]]
-    directed_edges = get_edges(edge_index_list)
-    num_nodes = int(np.max(np.hstack(directed_edges))) + 1
+    undirected_edges = get_edges(edge_index_list)
+    num_nodes = int(np.max(np.hstack(undirected_edges))) + 1
 
     gdata_list = []
-    for edge_index in directed_edges:
+    for edge_index in undirected_edges:
         gdata = Data(x=None, edge_index=edge_index, num_nodes=num_nodes)
         gdata_list.append(train_test_split_edges(gdata, 0.1, 0.4))
 

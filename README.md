@@ -25,6 +25,10 @@ The data is cached in `./data/input/cached`.
 
 ```python main.py --model=HMPTGN --dataset=enron10 --lr=0.002 --seed=998877```
 
+3.1.1 To run HMPTGN on caida:
+```cd script && nohup python -u main.py --dataset caida --lr 0.00005 --max_epoch 100 > ../data/output/log/caida/HMPTGN/training_formal_$(date +%Y%m%d_%H%M%S).log 2>&1 &```
+
+
 3.2 Seed: 998877, 23456, 900.
 
 3.3 Dataset choices: disease, enron10, dblp, uci, mathoverflow, fbw.

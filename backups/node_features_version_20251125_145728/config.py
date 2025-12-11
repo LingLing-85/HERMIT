@@ -13,7 +13,7 @@ parser.add_argument('--nout', type=int, default=16, help='dim of output embeddin
 
 # 2.experiments
 parser.add_argument('--max_epoch', type=int, default=300, help='number of epochs to train.')
-parser.add_argument('--testlength', type=int, default=145, help='length for test, default:50')
+parser.add_argument('--testlength', type=int, default=50, help='length for test, default:50')
 #device change
 parser.add_argument('--device', type=str, default='cuda', help='training device')
 parser.add_argument('--device_id', type=str, default='0', help='device id for gpu')
@@ -101,13 +101,9 @@ if args.dataset in ['disease']:
     args.pre_defined_feature = 1  # using pre_defined_feature as input
 
 if args.dataset in ['caida']:
-    # args.testlength = 50
+    args.testlength = 50
     args.use_rtt_feature = True
     # args.lr = 0.0001  # Conservative learning rate for numerical stability
     args.EPS = 1e-5   # Larger epsilon to prevent division by zero
-
-if args.dataset in ['caida_rtt']:
-    args.testlength = 145
-    args.trainable_feat = 1
 
 

@@ -27,9 +27,9 @@ class HMPGCNConv(nn.Module):
         self.hyp_act = HypMPAct(manifold, c_out, act)
         self.manifold = manifold
 
-    def forward(self, x, edge_index, edge_weight=None):
+    def forward(self, x, edge_index):
         h = self.linear.forward(x)
-        h = self.agg.forward(h, edge_index, edge_weight)
+        h = self.agg.forward(h, edge_index)
         h = self.hyp_act.forward(h)
         return h
 
@@ -167,6 +167,7 @@ class HypMPAgg(MessagePassing):
         self.manifold = manifold
         self.c = torch.tensor(c)
 
+
     @staticmethod
     def norm(edge_index, num_nodes, edge_weight=None, improved=False, dtype=None):
         if edge_weight is None:
@@ -184,9 +185,9 @@ class HypMPAgg(MessagePassing):
 
         return edge_index, deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
 
-    def forward(self, x, edge_index, edge_weight=None):
+    def forward(self, x, edge_index):
 
-        edge_index, norm = self.norm(edge_index, x.size(0), edge_weight, dtype=x.dtype)
+        edge_index, norm = self.norm(edge_index, x.size(0), dtype=x.dtype)
         s = self.manifold.p2k(x, self.c)
         node_i = edge_index[0]
         node_j = edge_index[1]

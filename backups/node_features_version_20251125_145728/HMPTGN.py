@@ -28,16 +28,11 @@ class HMPTGN(BaseModel):
         self.r = nn.Linear(self.nout, 1, bias=False)
         self.Q = nn.Linear(self.nhid, self.nout, bias=False)
         self.num_window = args.nb_window
-        # Adapter for edge features (rtt_avg, rtt_std, weight) -> scalar weight
-        self.edge_encoder = nn.Linear(3, 1)
         self.reset_parameters()
 
     def reset_parameters(self):
         geotorch.orthogonal(self.Q, "weight")
         geotorch.orthogonal(self.r, "weight")
-        torch.nn.init.xavier_uniform_(self.edge_encoder.weight)
-        if self.edge_encoder.bias is not None:
-            self.edge_encoder.bias.data.fill_(0)
         glorot(self.feat)
         glorot(self.linear.weight)
         glorot(self.hidden_initial)
@@ -97,14 +92,7 @@ class HMPTGN(BaseModel):
             x = torch.cat([x, self.hiddens[-1]], dim=1)
             x = self.initHyperX(x, self.c[0])
 
-        # Process edge weights if they are 3D features
-        if weight is not None and weight.dim() > 1 and weight.shape[-1] == 3:
-            # [E, 3] -> [E, 1] -> [E]
-            weight = self.edge_encoder(weight).squeeze(-1)
-            # Sigmoid to ensure weights are in (0, 1) range
-            weight = torch.sigmoid(weight)
-
-        x = self.layer1(x, edge_index, weight)
+        x = self.layer1(x, edge_index)
 
         # GRU layer
         hlist = torch.cat([hidden for hidden in self.hiddens], dim=0)

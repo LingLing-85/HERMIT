@@ -51,13 +51,7 @@ def prepare(data, t, detection=False):
         # nodes = list(np.intersect1d(pos_index.numpy(), neg_index.numpy()))
         # 2.Obtain full related nodes
         nodes = list(np.union1d(pos_index.cpu().numpy(), neg_index.cpu().numpy()))
-        
-        # Get edge weights if available
-        if data['weights'] is not None:
-            weights = data['weights'][t].to(args.device)
-        else:
-            weights = None
-            
+        weights = None
         return edge_index, pos_index, neg_index, nodes, weights, new_pos_index, new_neg_index
 
     if detection == True:

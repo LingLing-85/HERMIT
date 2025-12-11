@@ -201,7 +201,7 @@ def mask_edges_prd_new_by_marlin(adjs_list):
         edges_perm = edges[:, 0] * 1e5 + edges[:, 1]  # hash current edges
         last_edges_perm = last_edges[:, 0] * 1e5 + last_edges[:, 1]  # hash last edges
         perm = np.setdiff1d(edges_perm, np.intersect1d(edges_perm, last_edges_perm))  # new edges: edge-edge^last_edge
-        edges_pos = np.vstack(np.divmod(perm, 1e5)).transpose().astype(np.long)  # convert perm to indices
+        edges_pos = np.vstack(np.divmod(perm, 1e5)).transpose().astype(np.int64)  # convert perm to indices
         num_false = int(edges_pos.shape[0])
 
         # 2.2 get all pos edge to avoid being sampled

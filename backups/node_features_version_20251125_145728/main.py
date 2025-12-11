@@ -72,7 +72,7 @@ class Runner(object):
             for t in self.train_shots:
                 edge_index, pos_index, neg_index, activate_nodes, edge_weight, _, _ = prepare(data, t)
                 optimizer.zero_grad()
-                z = self.model(edge_index, self.x, edge_weight)
+                z = self.model(edge_index, self.x)
                 if args.use_htc == 0:
                     epoch_loss = self.loss(z, edge_index)
                 else:
@@ -94,11 +94,9 @@ class Runner(object):
                 self.model.update_hiddens_all_with(z)
             self.model.eval()
             average_epoch_loss = np.mean(epoch_losses)
-            # Always test to see results every epoch
-            test_results = self.test(epoch, z)
-            
             if average_epoch_loss < min_loss:
                 min_loss = average_epoch_loss
+                test_results = self.test(epoch, z)
                 patience = 0
             else:
                 patience += 1
