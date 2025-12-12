@@ -41,3 +41,6 @@ For the baselines, please follow these repos and papers:
 - [EvolveGCN](https://github.com/IBM/EvolveGCN)
 - [DySAT](https://github.com/FeiGSSS/DySAT_pytorch)
 - [DHGAT](https://doi.org/10.1016/j.neucom.2023.127038)
+
+執行指令
+```python script/main.py --dataset caida --lr 0.1 --max_epoch 10```
