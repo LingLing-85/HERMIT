@@ -150,6 +150,23 @@ def process_caida_data(data_dir, output_dir):
         all_avg_rtt = np.concatenate(all_avg_rtt)
         all_std_rtt = np.concatenate(all_std_rtt)
         
+        # Clip outliers BEFORE log transform to prevent overflow
+        # Use a hard limit of 10,000 ms (10 seconds) as requested by the user
+        avg_rtt_max_limit = 10000.0  # 10 seconds
+        std_rtt_max_limit = 5000.0   # Reasonable limit for standard deviation
+        
+        print(f"RTT statistics (original scale):")
+        print(f"  Avg RTT: min={all_avg_rtt.min():.2f}ms, max={all_avg_rtt.max():.2f}ms, median={np.median(all_avg_rtt):.2f}ms")
+        print(f"  Clipping Avg RTT at {avg_rtt_max_limit} ms as outliers")
+        
+        # Clip extreme outliers
+        all_avg_rtt = np.clip(all_avg_rtt, None, avg_rtt_max_limit)
+        all_std_rtt = np.clip(all_std_rtt, None, std_rtt_max_limit)
+        
+        # Save bounds for reference
+        avg_rtt_99 = avg_rtt_max_limit
+        std_rtt_99 = std_rtt_max_limit
+        
         # Log transform
         all_avg_rtt = np.log1p(all_avg_rtt)
         all_std_rtt = np.log1p(all_std_rtt)
@@ -158,7 +175,7 @@ def process_caida_data(data_dir, output_dir):
         avg_min, avg_max = all_avg_rtt.min(), all_avg_rtt.max()
         std_min, std_max = all_std_rtt.min(), all_std_rtt.max()
         
-        print(f"Global RTT stats (log-scale): Avg [{avg_min:.4f}, {avg_max:.4f}], Std [{std_min:.4f}, {std_max:.4f}]")
+        print(f"Global RTT stats (log-scale after clipping): Avg [{avg_min:.4f}, {avg_max:.4f}], Std [{std_min:.4f}, {std_max:.4f}]")
     else:
         avg_min, avg_max = 0, 1
         std_min, std_max = 0, 1
@@ -181,15 +198,19 @@ def process_caida_data(data_dir, output_dir):
         # Calculate edge weights from RTT if available
         # Calculate edge weights from RTT if available
         if 'avg_rtt' in df.columns:
-            # 1. Log transform
-            rtt = np.log1p(df['avg_rtt'].values)
-            std = np.log1p(df['std_rtt'].values)
+            # 1. Clip outliers to match global statistics
+            rtt_raw = np.clip(df['avg_rtt'].values, None, avg_rtt_99)
+            std_raw = np.clip(df['std_rtt'].values, None, std_rtt_99)
             
-            # 2. Global Min-Max Normalization -> [0, 1]
+            # 2. Log transform
+            rtt = np.log1p(rtt_raw)
+            std = np.log1p(std_raw)
+            
+            # 3. Global Min-Max Normalization -> [0, 1]
             rtt = (rtt - avg_min) / (avg_max - avg_min + 1e-6)
             std = (std - std_min) / (std_max - std_min + 1e-6)
             
-            # 3. Weight (default to 1.0 if not present)
+            # 4. Weight (default to 1.0 if not present)
             if 'weight' in df.columns:
                 w = df['weight'].values
             else:
@@ -247,6 +268,8 @@ def process_caida_data(data_dir, output_dir):
     torch.save(edge_index_list, save_dir / f'{dataset_name}.pt')
     torch.save(edge_weight_list, save_dir / f'{dataset_name}_weights.pt')
     torch.save(features, save_dir / 'features.pt')
+    # Save RTT normalization stats
+    torch.save({'avg_min': float(avg_min), 'avg_max': float(avg_max), 'std_min': float(std_min), 'std_max': float(std_max)}, save_dir / 'rtt_stats.pt')
     
     print(f"✓ Saved preprocessed data to: {save_dir / f'{dataset_name}.pt'}")
     print(f"✓ Saved edge weights to: {save_dir / f'{dataset_name}_weights.pt'}")

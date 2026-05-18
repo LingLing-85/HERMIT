@@ -9,3 +9,4 @@ logs/
 nohup.out
 .DS_Store
 script/data/
+backups/

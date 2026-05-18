@@ -12,8 +12,9 @@ parser.add_argument('--nhid', type=int, default=16, help='dim of hidden embeddin
 parser.add_argument('--nout', type=int, default=16, help='dim of output embedding')
 
 # 2.experiments
-parser.add_argument('--max_epoch', type=int, default=300, help='number of epochs to train.')
+parser.add_argument('--max_epoch', type=int, default=100, help='number of epochs to train.')
 parser.add_argument('--testlength', type=int, default=145, help='length for test, default:50')
+parser.add_argument('--vallength', type=int, default=0, help='length for validation, default:0')
 #device change
 parser.add_argument('--device', type=str, default='cuda', help='training device')
 parser.add_argument('--device_id', type=str, default='0', help='device id for gpu')
@@ -59,6 +60,14 @@ parser.add_argument('--casual_conv_depth', type=int, default=1, help='number of 
 parser.add_argument('--casual_conv_kernel_size', type=int, default=2,
                     help='temporal casual convolution kernel size')
 
+# 4. RTT Prediction (Multi-task Learning)
+parser.add_argument('--enable_rtt_prediction', type=bool, default=False,
+                    help='enable RTT prediction task alongside link prediction')
+parser.add_argument('--rtt_loss_weight', type=float, default=10.0,
+                    help='weight for RTT prediction loss in multi-task learning')
+parser.add_argument('--rtt_hidden_dim', type=int, default=32,
+                    help='hidden dimension for RTT regression head MLP')
+
 args = parser.parse_args()
 
 # set the running device
@@ -102,9 +111,16 @@ if args.dataset in ['disease']:
 
 if args.dataset in ['caida']:
     # args.testlength = 50
-    args.use_rtt_feature = True
-    # args.lr = 0.0001  # Conservative learning rate for numerical stability
-    args.EPS = 1e-5   # Larger epsilon to prevent division by zero
+    # args.use_rtt_feature = True  # Disable this as we are using trainable features
+    args.trainable_feat = 1      # Enable trainable features (128D)
+    args.nfeat = 128             # Set feature dimension to 128
+    args.lr = 0.0001             # Set learning rate to 0.0001 for fine-grained convergence
+    args.EPS = 1e-5
+    args.enable_rtt_prediction = True
+    args.save_embeddings = 1     # Save embeddings for downstream RTT prediction
+    args.max_epoch = 50          # As requested
+    args.min_epoch = 20          # Lower min_epoch
+    args.vallength = 70          # About 5% of training data for validation
 
 if args.dataset in ['caida_rtt']:
     args.testlength = 145

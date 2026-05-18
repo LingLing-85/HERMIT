@@ -57,8 +57,18 @@ def prepare(data, t, detection=False):
             weights = data['weights'][t].to(args.device)
         else:
             weights = None
+        
+        # Extract RTT labels (only for positive edges)
+        rtt_labels = None
+        if weights is not None and args.enable_rtt_prediction:
+            # weights format: [num_edges, 3] = [rtt_avg, rtt_std, weight]
+            if weights.dim() > 1 and weights.shape[-1] >= 1:
+                # rtt_avg is already log1p + min-max normalized in [0, 1]
+                rtt_labels = weights[:, 0]  # [num_edges]
+            else:
+                logger.warning(f"RTT labels format unexpected at snapshot {t}")
             
-        return edge_index, pos_index, neg_index, nodes, weights, new_pos_index, new_neg_index
+        return edge_index, pos_index, neg_index, nodes, weights, new_pos_index, new_neg_index, rtt_labels
 
     if detection == True:
         train_pos_edge_index = data['gdata'][t].train_pos_edge_index.long().to(args.device)

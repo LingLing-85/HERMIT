@@ -53,14 +53,19 @@ def load_vgrnn_dataset(dataset):
     return data
 
 
-def load_new_dataset(dataset):
     print('>> loading on new dataset')
     data = {}
-    rawfile = '../data/input/processed/{}/{}.pt'.format(dataset, dataset)
+    
+    # Get the project root directory (two levels up from utils/data_util.py)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(current_dir))
+    
+    # Construct absolute paths
+    rawfile = os.path.join(project_root, 'data/input/processed/{}/{}.pt'.format(dataset, dataset))
     edge_index_list = torch.load(rawfile)  # format: list:[[[1,2],[2,3],[3,4]]]
     
     # Load edge weights if available
-    weight_file = '../data/input/processed/{}/{}_weights.pt'.format(dataset, dataset)
+    weight_file = os.path.join(project_root, 'data/input/processed/{}/{}_weights.pt'.format(dataset, dataset))
     if os.path.exists(weight_file):
         edge_weight_list = torch.load(weight_file)
         print('>> loaded edge features from {}'.format(weight_file))
@@ -90,6 +95,16 @@ def load_new_dataset(dataset):
     data['new_pedges'], data['new_nedges'] = new_pedges, new_nedges  # list
     data['num_nodes'] = num_nodes
     data['time_length'] = time_length
+    # Load RTT stats for caida
+    if dataset == 'caida':
+        stats_file = os.path.join(project_root, 'data/input/processed/{}/rtt_stats.pt'.format(dataset))
+        if os.path.exists(stats_file):
+            stats = torch.load(stats_file)
+            data['rtt_avg_min'] = stats['avg_min']
+            data['rtt_avg_max'] = stats['avg_max']
+        else:
+            data['rtt_avg_min'] = 0.0
+            data['rtt_avg_max'] = 1.0
     print('>> data: {}'.format(dataset))
     print('>> total length: {}'.format(time_length))
     print('>> number nodes: {}'.format(data['num_nodes']))
@@ -154,7 +169,9 @@ def load_new_dataset_det(dataset):
 
 def loader(dataset='enron10'):
     # if cached, load directly
-    data_root = '../data/input/cached/{}/'.format(dataset)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(current_dir))
+    data_root = os.path.join(project_root, 'data/input/cached/{}/'.format(dataset))
     filepath = mkdirs(data_root) + '{}.data'.format(dataset)
     if os.path.isfile(filepath):
         print('loading {} directly'.format(dataset))
