@@ -4,7 +4,7 @@ This repository is the official implementation of **HERMIT (Hyperbolic Edge-awar
 
 HERMIT combines the geometric representation learning power of Hyperbolic Temporal Graph Networks with the robust regression capabilities of Random Forest in Poincare tangent spaces.
 
-![Framework of HMPTGN](figures/HMPTGN_framework.png)
+![Framework of HMPTGN](figures/HERMIT.png)
 
 ---
 
