@@ -78,8 +78,9 @@ else:
     args.device = torch.device("cpu")
     print('using cpu to train the model')
 
-args.output_folder = '../data/output/log/{}/{}/'.format(args.dataset, args.model)
-args.result_txt = '../data/output/results/{}_{}_result.txt'.format(args.dataset, args.model)
+model_folder = 'HERMIT' if args.model == 'HMPTGN' else args.model
+args.output_folder = '../data/output/log/{}/{}/'.format(args.dataset, model_folder)
+args.result_txt = '../data/output/results/{}_{}_result.txt'.format(args.dataset, model_folder)
 
 # open debugging mode
 if args.debug_mode == 1:
