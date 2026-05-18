@@ -172,10 +172,13 @@ def main():
     model = load_model(args).to(args.device)
     
     # Load weights
-    model_path = os.path.join(ROOT_DIR, 'data/output/log/caida/HMPTGN/best_model.pth')
+    model_path = os.path.join(ROOT_DIR, 'data/output/log/caida/HERMIT/best_model.pth')
     if not os.path.exists(model_path):
-        print(f"Error: Model not found at {model_path}")
-        return
+        # Fallback to legacy HMPTGN path
+        model_path = os.path.join(ROOT_DIR, 'data/output/log/caida/HMPTGN/best_model.pth')
+        if not os.path.exists(model_path):
+            print(f"Error: Model not found at {model_path}")
+            return
 
     checkpoint = torch.load(model_path, map_location=args.device, weights_only=False)
     model.load_state_dict(checkpoint['model_state_dict'])
