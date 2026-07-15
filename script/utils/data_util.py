@@ -53,6 +53,7 @@ def load_vgrnn_dataset(dataset):
     return data
 
 
+def load_new_dataset(dataset):
     print('>> loading on new dataset')
     data = {}
     
