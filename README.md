@@ -40,7 +40,7 @@ pip install -r requirements.txt
 To train the base temporal graph model and learn hyperbolic embeddings:
 
 ```bash
-python script/main.py --dataset caida --lr 0.00001 --max_epoch 100
+python script/main.py --dataset caida --lr 0.0001 --max_epoch 50
 ```
 This script trains the hyperbolic temporal encoder used by **HERMIT** and saves the best checkpoint to: 
 ```text
@@ -53,7 +53,7 @@ data/output/log/caida/HERMIT/best_model.pth
 Once Phase 1 is complete, run the evaluation script to train the Random Forest regressor on hyperbolic tangent spaces and output the final RTT prediction metrics:
 
 ```bash
-python evaluate_hmptgn_rf.py
+python evaluate_hermit_rf.py
 ```
 This script will:
 - Load the pre-trained hyperbolic embeddings from Phase 1.
@@ -68,7 +68,7 @@ This script will:
 To ensure that the environment is correctly set up and all Python scripts are structurally correct without syntax errors, run:
 
 ```bash
-python -m py_compile evaluate_hmptgn_rf.py script/main.py
+python -m py_compile evaluate_hermit_rf.py script/main.py
 ```
 
 If the command executes with no output, the code structure and all dependencies are verified and correct.

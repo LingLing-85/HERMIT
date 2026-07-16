@@ -316,7 +316,7 @@ def main():
     # 5. Train Random Forests
     print("\nTraining Euclidean RF (Baseline)...")
     # Using stronger RF for high-dim input + ensuring features are seen
-    # Testing 120/30/0.8 (User Request for All-Win)
+    # RF Hyperparameters: 120 estimators, max depth 30, max features 0.8
     rf_euc = RandomForestRegressor(n_estimators=120, max_depth=30, max_features=0.8, n_jobs=-1, random_state=42, verbose=1)
     rf_euc.fit(X_train_raw, y_train)
     
